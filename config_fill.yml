@@ -1,0 +1,21 @@
+CO_SA:
+  drivername: postgresql
+  dbname: oltp
+  user: andres
+  password: 12345
+  host: 127.0.0.1
+  port: 5432
+
+ETL_PRO:
+  drivername: postgresql
+  dbname: newolap
+  user: andres
+  password: 12345
+  host: 127.0.0.1
+  port: 5432
+
+LOAD_DIMENSIONS:
+  True
+
+medicamentos:
+  sources/medicamentos.xls
