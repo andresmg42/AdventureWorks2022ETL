@@ -28,11 +28,10 @@ inspector = inspect(etl_conn)
 tnames = inspector.get_table_names()
 
 if not tnames:
-    conn = psycopg2.connect(dbname=config_etl['dbname'], user=config_etl['user'], password=config_etl['password'],
-                            host=config_etl['host'], port=config_etl['port'])
-    cur = conn.cursor()
-    with open('sqlscripts.yml', 'r') as f:
-        sql = yaml.safe_load(f)
-        for key, val in sql.items():
-            cur.execute(val)
-            conn.commit()
+    with etl_conn.connect() as conn:  
+        with open('sqlscripts.yml', 'r') as f:
+            sql = yaml.safe_load(f)
+            for key, val in sql.items():
+                conn.execute(text(val))
+        conn.commit() 
+

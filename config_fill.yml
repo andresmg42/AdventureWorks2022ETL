@@ -1,6 +1,6 @@
 CO_SA:
   drivername: postgresql
-  dbname: oltp
+  dbname: adventure_works
   user: andres
   password: 12345
   host: 127.0.0.1
@@ -8,7 +8,7 @@ CO_SA:
 
 ETL_PRO:
   drivername: postgresql
-  dbname: newolap
+  dbname: adventure_works_dw
   user: andres
   password: 12345
   host: 127.0.0.1
