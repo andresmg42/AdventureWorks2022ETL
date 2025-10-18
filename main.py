@@ -20,12 +20,15 @@ url_co = (f"{config_co['drivername']}://{config_co['user']}:{config_co['password
           f"{config_co['port']}/{config_co['dbname']}")
 url_etl = (f"{config_etl['drivername']}://{config_etl['user']}:{config_etl['password']}@{config_etl['host']}:"
            f"{config_etl['port']}/{config_etl['dbname']}")
+
 # Create the SQLAlchemy Engine
 co_sa = create_engine(url_co)
 etl_conn = create_engine(url_etl)
 
-inspector = inspect(etl_conn)
+inspector = inspect(co_sa)
 tnames = inspector.get_table_names()
+
+print(f"\nTablas encontradas en CO_SA (adventure_works): {tnames}")
 
 if not tnames:
     with etl_conn.connect() as conn:  
