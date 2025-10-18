@@ -25,16 +25,24 @@ url_etl = (f"{config_etl['drivername']}://{config_etl['user']}:{config_etl['pass
 co_sa = create_engine(url_co)
 etl_conn = create_engine(url_etl)
 
-inspector = inspect(co_sa)
-tnames = inspector.get_table_names()
+inspector_co = inspect(co_sa)
+schemas = inspector_co.get_schema_names()
 
-print(f"\nTablas encontradas en CO_SA (adventure_works): {tnames}")
+business_schemas = [s for s in schemas if s not in ['pg_catalog', 'information_schema', 'sysdiagrams', 'awbuild_version']]
 
-if not tnames:
-    with etl_conn.connect() as conn:  
-        with open('sqlscripts.yml', 'r') as f:
-            sql = yaml.safe_load(f)
-            for key, val in sql.items():
-                conn.execute(text(val))
-        conn.commit() 
+print("Esquemas encontrados:", business_schemas)
 
+all_tables = {}
+
+for schema_name in business_schemas:
+    tables_in_schema = inspector_co.get_table_names(schema=schema_name)
+
+    if tables_in_schema:
+        all_tables[schema_name] = tables_in_schema
+
+# Imprimir los resultados
+print("\n--- Tablas de Negocio Encontradas ---")
+for schema, tables in all_tables.items():
+    print(f"Esquema '{schema}' ({len(tables)} tablas):")
+    # Imprime las primeras 5 tablas
+    print(f"  > {tables[:5]}...")
