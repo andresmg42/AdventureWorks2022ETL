@@ -170,7 +170,7 @@ create_dw_schema: |
       spanish_product_name VARCHAR(50) NOT NULL,
       french_product_name VARCHAR(50) NOT NULL,
       standard_cost NUMERIC(19, 4) NULL,
-      finished_goods_flag SMALLINT NOT NULL,
+      finished_goods_flag BOOLEAN NOT NULL,
       color VARCHAR(15) NOT NULL,
       safety_stock_level SMALLINT NULL,
       reorder_point SMALLINT NULL,
