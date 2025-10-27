@@ -19,6 +19,7 @@
         matplotlib
         scikit-learn
         python-dateutil
+        deep-translator
       ]);
     in {
       devShells.${system}.default = pkgs.mkShell {

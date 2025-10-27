@@ -19,6 +19,8 @@ def connect():
     etl_conn = create_engine(url_etl)
 
     inspector_co = inspect(co_sa)
+    inspector_etl = inspect(etl_conn)
+
     schemas = inspector_co.get_schema_names()
 
     business_schemas = [s for s in schemas if s not in ['pg_catalog', 'information_schema', 'sysdiagrams', 'awbuild_version']]
@@ -40,4 +42,8 @@ def connect():
         # Imprime las primeras 5 tablas
         print(f"  > {tables[:5]}...")
 
-    return inspector_co
+    tables_names_dw = inspector_etl.get_table_names()
+    print("Tables de datos en la dw (debe estar vacia al iniciar la conexión")
+    print(tables_names_dw)
+
+    return inspector_co, etl_conn, co_sa

@@ -22,7 +22,7 @@ services:
       POSTGRES_PASSWORD: pg123
       POSTGRES_DB: adventure_works_dw
     ports:
-      - "5433:5433"
+      - "5433:5432"
     volumes:
       - ./scripts/create-roles.sql:/docker-entrypoint-initdb.d/00_create_roles.sql
     networks:
