@@ -24,7 +24,7 @@ services:
     ports:
       - "5433:5432"
     volumes:
-      - ./scripts/create-roles.sql:/docker-entrypoint-initdb.d/00_create_roles.sql
+      - ./scripts/setup-dw.sql:/docker-entrypoint-initdb.d/00_setup_dw.sql
     networks:
       - pgnet
 
