@@ -12,7 +12,7 @@ ETL_PRO:
   user: andres
   password: 12345
   host: 127.0.0.1
-  port: 5432
+  port: 5433
 
 ETL_PRO_OR:
   drivername: postgresql
@@ -24,6 +24,3 @@ ETL_PRO_OR:
 
 LOAD_DIMENSIONS:
   True
-
-medicamentos:
-  sources/medicamentos.xls
