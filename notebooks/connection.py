@@ -1,7 +1,7 @@
 import yaml
 from sqlalchemy import create_engine, inspect, text
 
-def connect(schema):
+def connect():
     with open('../config_fill.yml', 'r') as f:
         config = yaml.safe_load(f)
         config_co = config['CO_SA']
@@ -21,12 +21,12 @@ def connect(schema):
     etl_conn = create_engine(url_etl)
     etl_conn_or=create_engine(url_etl_or)
 
-    inspector2=inspect(co_oltp)
+#     inspector2=inspect(co_oltp)
     inspector = inspect(etl_conn)
     tnames = inspector.get_table_names()
-    tnames2=inspector2.get_table_names(schema=schema)
+#     tnames2=inspector2.get_table_names(schema=schema)
 
-    print(tnames2)
+#     print(tnames2)
     if not tnames:
         with etl_conn.connect() as conn:  
             with open('../sqlscripts.yml', 'r') as f:
