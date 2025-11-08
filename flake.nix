@@ -20,7 +20,11 @@
         scikit-learn
         python-dateutil
         deep-translator
-      ]);
+        transformers
+        sentencepiece
+        sacremoses
+        pytorch
+        ]);
     in {
       devShells.${system}.default = pkgs.mkShell {
         buildInputs = with pkgs; [
