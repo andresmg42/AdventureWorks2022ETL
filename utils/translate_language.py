@@ -22,10 +22,10 @@ def get_model(model_name):
 # --- Step 2: The New, Fast Translation Function ---
 
 def convert_language(
-    src_lang: str,
-    tgt_lang: str,
     src_name: str,
     tgt_name: str,
+    tokenizer,
+    model,
     df: pd.DataFrame,
     batch_size: int = 32 # Batches of 32 are often a good starting point
 ):
@@ -35,10 +35,8 @@ def convert_language(
     """
     
     # --- A. Get the cached model ---
-    model_name = f'Helsinki-NLP/opus-mt-{src_lang}-{tgt_lang}'
-    tokenizer, model = get_model(model_name)
-
     if tokenizer is None:
+        print(f"WARNING: There are not model for the column {tgt_name}. Skipping translate process.")
         return df # Failed to load model, just return
 
     # --- B. The Core Speedup: Translate ONLY Unique Values ---

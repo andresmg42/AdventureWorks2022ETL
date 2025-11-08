@@ -116,3 +116,4 @@ widgetsnbextension==4.0.14
 xlrd==2.0.1
 psycopg2~=2.9.10
 deep-translator~=1.11.4
+transformers==4.57.0

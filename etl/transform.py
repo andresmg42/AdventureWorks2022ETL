@@ -1,6 +1,7 @@
 import pandas as pd
 from sqlalchemy import text, Engine
 from etl.utils_etl import get_sales_territory_image
+from utils.model_loader import ModelRegistry
 from utils.translate_language import convert_language
 
 def transform_sales_territory(df: pd.DataFrame) -> pd.DataFrame:
@@ -33,11 +34,16 @@ def transform_currency(df: pd.DataFrame) -> pd.DataFrame:
 
     return df
 
-def transform_geography(df: pd.DataFrame, etl_conn: Engine) -> pd.DataFrame:
+def transform_geography(df: pd.DataFrame, etl_conn: Engine, model_registry: ModelRegistry) -> pd.DataFrame:
     print("TRANSFORM: Transformando geography")
+
+    tokenizer_es, model_es = model_registry.get_model('en', 'es')
+    tokenizer_fr, model_fr = model_registry.get_model('en', 'fr')
+
     df.rename(columns={'country_region_name':'english_country_region_name'},inplace=True)
-    df = convert_language('en', 'fr', 'english_country_region_name', 'french_country_region_name', df)
-    df = convert_language('en', 'es', 'english_country_region_name', 'spanish_country_region_name', df)
+
+    df = convert_language('english_country_region_name', 'spanish_country_region_name', tokenizer_es, model_es, df)
+    df = convert_language('english_country_region_name', 'french_country_region_name', tokenizer_fr, model_fr, df)
 
     df_sales_territory_keys = pd.read_sql(
         text("""
