@@ -1,6 +1,7 @@
 import pandas as pd
-from sqlalchemy import Engine
+from sqlalchemy import text, Engine
 from etl.utils_etl import get_sales_territory_image
+from utils.translate_language import convert_language
 
 def transform_sales_territory(df: pd.DataFrame) -> pd.DataFrame:
     print("TRANSFORM: Transformando salesTerritory")
@@ -31,3 +32,33 @@ def transform_currency(df: pd.DataFrame) -> pd.DataFrame:
     df.drop(['modified_date'],axis=1,inplace=True)
 
     return df
+
+def transform_geography(df: pd.DataFrame, etl_conn: Engine) -> pd.DataFrame:
+    print("TRANSFORM: Transformando geography")
+    df.rename(columns={'country_region_name':'english_country_region_name'},inplace=True)
+    df = convert_language('en', 'fr', 'english_country_region_name', 'french_country_region_name', df)
+    df = convert_language('en', 'es', 'english_country_region_name', 'spanish_country_region_name', df)
+
+    df_sales_territory_keys = pd.read_sql(
+        text("""
+             SELECT sales_territory_key, sales_territory_alternate_key
+             FROM dw.dim_sales_territory
+             """),
+        etl_conn
+    )
+
+    df_geo_linked = pd.merge(
+        df,
+        df_sales_territory_keys,
+        on='sales_territory_alternate_key',
+        how='left'
+    )
+
+    columns_to_load = [
+        'city', 'state_province_code', 'state_province_name',
+        'country_region_code', 'english_country_region_name', 'spanish_country_region_name',
+        'french_country_region_name', 'postal_code', 'sales_territory_key'
+    ]
+
+    return df_geo_linked[columns_to_load]
+

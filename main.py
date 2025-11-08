@@ -1,8 +1,8 @@
 import pandas as pd
 
-from etl.extract import extract_sales_territory, extract_currency
+from etl.extract import extract_sales_territory, extract_currency, extract_geography
 from etl.load import load_to_dw
-from etl.transform import transform_sales_territory, transform_currency
+from etl.transform import transform_sales_territory, transform_currency, transform_geography
 from connection import connect
 
 pd.set_option('display.max_rows', 100)
@@ -24,6 +24,10 @@ def main():
     load_to_dw(df_currency_final, 'dim_currency', 'dw', etl_conn)
 
     # Proceso DimGeography (depende de DimSalesTerritory)
+    df_geography_raw = extract_geography(co_oltp)
+    df_geography_final = transform_geography(df_geography_raw, etl_conn)
+    load_to_dw(df_geography_final, 'dim_geography', 'dw', etl_conn)
+
 
 if __name__ == "__main__":
     main()
