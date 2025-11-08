@@ -46,3 +46,6 @@ def extract_geography(co_olt: Engine) -> pd.DataFrame:
     """)
 
     return pd.read_sql(query_geography, co_olt)
+
+def extract_promotion(co_otl: Engine, schema) -> pd.DataFrame:
+    return pd.read_sql_table('special_offer', co_otl, schema)
