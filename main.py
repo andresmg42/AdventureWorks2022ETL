@@ -77,5 +77,11 @@ def main():
     )
     load_to_dw(df_product_raw_final, 'dim_product', 'dw', etl_conn)
 
+    # Proceso DimCustomer (depende de DimGeography)
+    df_customer_raw = extract_customer(co_oltp)
+    df_customer_final = transforms_customer(df_customer_raw, etl_conn, model_registry)
+    load_to_dw(df_customer_final, 'dim_customer', 'dw', etl_conn)
+
+
 if __name__ == "__main__":
     main()

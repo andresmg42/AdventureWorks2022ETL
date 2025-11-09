@@ -1,6 +1,6 @@
 import pandas as pd
 from sqlalchemy import text, Engine
-from etl.utils_etl import get_sales_territory_image, get_size_range
+from etl.utils_etl import get_sales_territory_image, get_size_range, extract_demographics, upper_income
 from utils.model_loader import ModelRegistry
 from utils.translate_language import convert_language
 from utils.days_and_moths import english_days, english_months, spanish_days, spanish_months, french_days, french_months
@@ -261,3 +261,48 @@ def transform_product(
     df = df.replace({'nan': None})
 
     return df
+
+def transforms_customer(df_customer_base: pd.DataFrame, etl_conn: Engine, model_registry: ModelRegistry):
+    print("TRANSFORM: Transformando customer")
+    demographics_df = df_customer_base['demographics'].apply(extract_demographics).apply(pd.Series)
+    df_customer_base = pd.concat([df_customer_base.drop('demographics', axis=1), demographics_df], axis=1)
+
+    df_customer_base.rename(columns={'occupation':'english_occupation','education':'english_education'},inplace=True)
+
+    tokenizer_es, model_es = model_registry.get_model('en', 'es')
+    tokenizer_fr, model_fr = model_registry.get_model('en', 'fr')
+
+    df_customer_base = convert_language('english_education', 'spanish_education', tokenizer_es, model_es, df_customer_base)
+    df_customer_base = convert_language('english_education', 'french_education', tokenizer_fr, model_fr, df_customer_base)
+    df_customer_base = convert_language('english_education', 'spanish_occupation', tokenizer_es, model_es, df_customer_base)
+    df_customer_base = convert_language('english_occupation', 'french_occupation', tokenizer_fr, model_fr, df_customer_base)
+
+    df_geo_with_keys = pd.read_sql(
+        """
+             SELECT geography_key, city, postal_code, state_province_code, country_region_code
+             FROM dim_geography;
+        """,
+        etl_conn)
+
+    linking_columns = ['city', 'postal_code', 'state_province_code', 'country_region_code']
+
+    df_customer_base = pd.merge(
+        df_customer_base,
+        df_geo_with_keys,
+        on=linking_columns,
+        how='left'
+    )
+
+    final_columns = [
+        'customer_alternate_key', 'geography_key', 'title', 'first_name', 'middle_name',
+        'last_name', 'suffix', 'name_style', 'birth_date', 'gender', 'marital_status',
+        'yearly_income', 'total_children', 'number_children_at_home', 'english_education',
+        'spanish_education', 'english_occupation', 'spanish_occupation', 'house_owner_flag',
+        'number_cars_owned', 'email_address', 'phone', 'address_line1', 'address_line2',
+        'date_first_purchase', 'commute_distance', 'french_occupation', 'french_education'
+    ]
+
+    df_customer_base = df_customer_base[final_columns]
+    df_customer_base['yearly_income'] = df_customer_base['yearly_income'].apply(upper_income)
+
+    return df_customer_base
