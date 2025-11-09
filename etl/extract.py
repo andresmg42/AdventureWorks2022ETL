@@ -4,7 +4,7 @@ from sqlalchemy import text, Engine
 def extract_sales_territory(co_olt: Engine, schema) -> pd.DataFrame:
     print("EXTRACT: Leyendo SalesTerritory")
 
-    return pd.read_sql_table('sales_territory',co_olt, schema)
+    return pd.read_sql_table('sales_territory',co_olt, schema=schema)
 
 def extract_currency(co_olt: Engine) -> pd.DataFrame:
     print("EXTRACT: Leyendo Currency")
@@ -48,4 +48,13 @@ def extract_geography(co_olt: Engine) -> pd.DataFrame:
     return pd.read_sql(query_geography, co_olt)
 
 def extract_promotion(co_otl: Engine, schema) -> pd.DataFrame:
-    return pd.read_sql_table('special_offer', co_otl, schema)
+    print("EXTRACT: Leyendo promotion")
+    return pd.read_sql_table('special_offer', co_otl, schema=schema)
+
+def extract_product_category(co_oltp: Engine, schema) -> pd.DataFrame:
+    print("EXTRACT: Leyendo product category")
+    return pd.read_sql_table('product_category', co_oltp, schema=schema)
+
+def extract_product_subcategory(co_oltp: Engine, schema) -> pd.DataFrame:
+    print("EXTRACT: Leyendo product subcategory")
+    return pd.read_sql_table('product_subcategory', co_oltp, schema=schema)

@@ -1,8 +1,8 @@
 import pandas as pd
 
-from etl.extract import extract_sales_territory, extract_currency, extract_geography, extract_promotion
+from etl.extract import extract_sales_territory, extract_currency, extract_geography, extract_promotion, extract_product_category, extract_product_subcategory
 from etl.load import load_to_dw
-from etl.transform import transform_sales_territory, transform_currency, transform_geography, transform_date, transform_promotion
+from etl.transform import transform_sales_territory, transform_currency, transform_geography, transform_date, transform_promotion, transform_product_category, transform_product_subcategory
 from connection import connect
 from utils.model_loader import ModelRegistry
 
@@ -14,6 +14,7 @@ def main():
     print("Iniciando prefase de precarga")
     co_oltp, etl_conn, _ = connect()
 
+    # Cargamos los modelos de traduccion antes del ETL para evitar que interrumpan su flujo
     model_registry = ModelRegistry()
     model_registry.preload_model('en', 'es')
     model_registry.preload_model('en', 'fr')
@@ -42,6 +43,16 @@ def main():
     df_promotion_raw = extract_promotion(co_oltp, 'sales')
     df_promotion_final = transform_promotion(df_promotion_raw, model_registry)
     load_to_dw(df_promotion_final, 'dim_promotion', 'dw', etl_conn)
+
+    # Proceso DimProductCategory (independiente)
+    df_product_category_raw = extract_product_category(co_oltp, 'production')
+    df_product_category_final = transform_product_category(df_product_category_raw, model_registry)
+    load_to_dw(df_product_category_final, 'dim_product_category', 'dw', etl_conn)
+
+    # Proceso DimProductSubCategory (depende de DimProductCategory)
+    df_product_subcategory_raw = extract_product_subcategory(co_oltp, 'production')
+    df_product_subcategory_final = transform_product_subcategory(df_product_subcategory_raw, etl_conn,model_registry)
+    load_to_dw(df_product_subcategory_final, 'dim_product_subcategory', 'dw', etl_conn)
 
 if __name__ == "__main__":
     main()

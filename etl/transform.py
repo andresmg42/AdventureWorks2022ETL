@@ -70,6 +70,7 @@ def transform_geography(df: pd.DataFrame, etl_conn: Engine, model_registry: Mode
     return df_geo_linked[columns_to_load]
 
 def transform_date() -> pd.DataFrame:
+    print("TRANSFORM: Generando date")
     df_date = pd.DataFrame({
         "date": pd.date_range(start='1/1/2005', end='31/12/2014', freq='D')
     })
@@ -106,6 +107,7 @@ def transform_date() -> pd.DataFrame:
     return df_date
 
 def transform_promotion(df: pd.DataFrame, model_registry: ModelRegistry) -> pd.DataFrame:
+    print("TRANSFORM: Transformando promotion")
     df = df.rename(columns={
         'special_offer_id': 'promotion_alternate_key',
         'description': 'english_promotion_name',
@@ -124,5 +126,42 @@ def transform_promotion(df: pd.DataFrame, model_registry: ModelRegistry) -> pd.D
     df=convert_language('english_promotion_category','spanish_promotion_category',tokenizer_es, model_es, df)
     df=convert_language('english_promotion_type','french_promotion_type', tokenizer_fr, model_fr, df)
     df=convert_language('english_promotion_type','spanish_promotion_type',tokenizer_es, model_es, df)
+
+    return df
+
+def transform_product_category(df: pd.DataFrame, model_registry: ModelRegistry) -> pd.DataFrame:
+    print("TRANSFORM: Transformando product category")
+    df = df.rename(columns={'product_category_id':'product_category_alternate_key','name':'english_product_category_name'})
+    df = df.drop(['rowguid', 'modified_date'], axis=1)
+
+    tokenizer_es, model_es = model_registry.get_model('en', 'es')
+    tokenizer_fr, model_fr = model_registry.get_model('en', 'fr')
+
+    df = convert_language('english_product_category_name', 'spanish_product_category_name', tokenizer_es, model_es, df)
+    df = convert_language('english_product_category_name', 'french_product_category_name', tokenizer_fr, model_fr, df)
+
+    return df
+
+def transform_product_subcategory(df: pd.DataFrame, etl_conn: Engine, model_registry: ModelRegistry) -> pd.DataFrame:
+    print("TRANSFORM: Transformando product subcategory")
+    df = df.rename(columns={'product_subcategory_id': 'product_subcategory_alternate_key', 'name': 'english_product_subcategory_name'})
+    df=df.drop(['rowguid','modified_date'],axis=1)
+
+    tokenizer_es, model_es = model_registry.get_model('en', 'es')
+    tokenizer_fr, model_fr = model_registry.get_model('en', 'fr')
+
+    df = convert_language('english_product_subcategory_name', 'spanish_product_subcategory_name', tokenizer_es, model_es, df)
+    df = convert_language('english_product_subcategory_name', 'french_product_subcategory_name', tokenizer_fr, model_fr, df)
+
+    dim_product_category = pd.read_sql_table('dim_product_category', etl_conn)
+
+    df = df.merge(
+        dim_product_category[['product_category_alternate_key', 'product_category_key']],
+        left_on='product_category_id',
+        right_on='product_category_alternate_key',
+        how='left'
+    )
+
+    df.drop(['product_category_alternate_key', 'product_category_id'], inplace=True, axis=1)
 
     return df
