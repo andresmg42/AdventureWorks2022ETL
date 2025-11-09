@@ -1,8 +1,8 @@
 import pandas as pd
 
-from etl.extract import extract_sales_territory, extract_currency, extract_geography, extract_promotion, extract_product_category, extract_product_subcategory
+from etl.extract import *
+from etl.transform import *
 from etl.load import load_to_dw
-from etl.transform import transform_sales_territory, transform_currency, transform_geography, transform_date, transform_promotion, transform_product_category, transform_product_subcategory
 from connection import connect
 from utils.model_loader import ModelRegistry
 
@@ -18,6 +18,9 @@ def main():
     model_registry = ModelRegistry()
     model_registry.preload_model('en', 'es')
     model_registry.preload_model('en', 'fr')
+    model_registry.preload_model('en', 'jap')
+    model_registry.preload_model('en', 'de')
+    model_registry.preload_model('en', 'trk')
 
     print("Iniciando proceso ETL")
     # Proceso DimSalesTerritory (independiente)
@@ -53,6 +56,26 @@ def main():
     df_product_subcategory_raw = extract_product_subcategory(co_oltp, 'production')
     df_product_subcategory_final = transform_product_subcategory(df_product_subcategory_raw, etl_conn,model_registry)
     load_to_dw(df_product_subcategory_final, 'dim_product_subcategory', 'dw', etl_conn)
+
+    # Proceso DimProduct (depende de DimProductSubCategory)
+    df_product_raw = extract_product(co_oltp, 'production')
+    df_sales_order = extract_sales_order(co_oltp)
+    df_product_model = extract_product_model(co_oltp)
+    df_large_photo = extract_large_photo(co_oltp)
+    df_product_price_list = extract_product_price_list(co_oltp)
+    df_language_description_raw = extract_language_description(co_oltp)
+    df_pivoted_language_description = transform_language_description(df_language_description_raw)
+    df_product_raw_final = transform_product(
+        df_product_raw,
+        df_sales_order,
+        df_product_model,
+        df_large_photo,
+        df_product_price_list,
+        df_pivoted_language_description,
+        etl_conn,
+        model_registry
+    )
+    load_to_dw(df_product_raw_final, 'dim_product', 'dw', etl_conn)
 
 if __name__ == "__main__":
     main()

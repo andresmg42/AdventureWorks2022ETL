@@ -1,6 +1,6 @@
 import pandas as pd
 from sqlalchemy import text, Engine
-from etl.utils_etl import get_sales_territory_image
+from etl.utils_etl import get_sales_territory_image, get_size_range
 from utils.model_loader import ModelRegistry
 from utils.translate_language import convert_language
 from utils.days_and_moths import english_days, english_months, spanish_days, spanish_months, french_days, french_months
@@ -163,5 +163,101 @@ def transform_product_subcategory(df: pd.DataFrame, etl_conn: Engine, model_regi
     )
 
     df.drop(['product_category_alternate_key', 'product_category_id'], inplace=True, axis=1)
+
+    return df
+
+def transform_language_description(df_language_description: pd.DataFrame) -> pd.DataFrame:
+    print("TRANSFORM: Transformando language description")
+    columns = df_language_description['name'].unique().tolist()
+
+    new_columns = {name: f'{name.lower()}_description' for name in columns}
+    df_language_description = df_language_description.pivot(
+        index='product_id', columns='name',
+        values='description').reset_index()
+
+    df_language_description.rename(columns=new_columns, inplace=True)
+
+    return df_language_description
+
+
+def transform_product(
+        df: pd.DataFrame,
+        df_sales_order: pd.DataFrame,
+        df_product_model: pd.DataFrame,
+        df_large_photo: pd.DataFrame,
+        df_product_price_list: pd.DataFrame,
+        df_pivoted_descriptions: pd.DataFrame,
+        etl_conn: Engine,
+        model_registry: ModelRegistry
+) -> pd.DataFrame:
+    print("TRANSFORM: Transformando product")
+    df = df.rename(columns={'product_number': 'product_alternate_key', 'name': 'english_product_name'})
+
+    dim_product_subcategory = pd.read_sql_query(
+        """SELECT product_subcategory_key, product_subcategory_alternate_key
+        FROM dim_product_subcategory
+        """,
+        etl_conn
+    )
+
+    df = df.merge(
+        dim_product_subcategory[['product_subcategory_alternate_key','product_subcategory_key']],
+        left_on='product_subcategory_id',
+        right_on='product_subcategory_alternate_key',
+        how='left'
+    )
+
+    df.drop(['product_subcategory_alternate_key','product_subcategory_id'], axis=1 ,inplace=True)
+    df['size_range'] = df['size'].apply(get_size_range)
+
+    df = df.merge(
+        df_sales_order[['product_id', 'dealer_price']],
+        on='product_id',
+        how='left'
+    )
+
+    df = df.merge(
+        df_product_model,
+        on='product_model_id',
+        how='left'
+    ).rename(columns={'name': 'model_name'})
+
+    df = df.merge(
+        df_large_photo,
+        on='product_id',
+        how='left'
+    )
+
+    df = df.merge(
+        df_product_price_list,
+        on='product_id',
+        how='left'
+    )
+
+    df['status'] = df['end_date'].apply(lambda x: 'Current' if pd.isna(x) else None)
+
+    df = df.merge(
+        df_pivoted_descriptions,
+        on='product_id',
+        how='left'
+    )
+
+    tokenizer_es, model_es = model_registry.get_model('en', 'es')
+    tokenizer_fr, model_fr = model_registry.get_model('en', 'fr')
+    tokenizer_jap, model_jap = model_registry.get_model('en', 'jap')
+    tokenizer_de, model_de = model_registry.get_model('en', 'de')
+    tokenizer_trk, model_trk = model_registry.get_model('en', 'trk')
+
+    df=convert_language('english_product_name','french_product_name', tokenizer_fr, model_fr, df)
+    df=convert_language('english_product_name','spanish_product_name', tokenizer_es, model_es, df)
+
+    df=convert_language('english_description','japanese_description', tokenizer_jap, model_jap, df)
+    df=convert_language('english_description','german_description',tokenizer_de, model_de, df)
+    df=convert_language('english_description','turkish_description', tokenizer_trk, model_trk, df)
+
+    df=df.drop(['product_id','make_flag','product_model_id','discontinued_date','rowguid','modified_date','sell_start_date','sell_end_date'],axis=1)
+
+    df['color'] = df['color'].apply(lambda x: 'NA' if pd.isna(x) else x)
+    df = df.replace({'nan': None})
 
     return df
