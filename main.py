@@ -6,7 +6,7 @@ from etl.load import load_to_dw
 from connection import connect
 from utils.model_loader import ModelRegistry
 
-SCHEMA = 'dw' # Cambiar a None si no hay schema
+SCHEMA = 'public' # Cambiar a None si no hay schema
 
 pd.set_option('display.max_rows', 100)
 pd.set_option('display.max_columns', 100)

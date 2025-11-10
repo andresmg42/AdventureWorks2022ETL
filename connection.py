@@ -38,15 +38,15 @@ def connect():
     etl_conn = create_engine(url_etl)
     etl_conn_or = None # create_engine(url_etl_or)
 
-    # inspector = inspect(etl_conn)
-    # tnames = inspector.get_table_names()
-    #
-    # if not tnames:
-    #     with etl_conn.connect() as conn:
-    #         with open("../sqlscripts.yml", "r") as f:
-    #             sql = yaml.safe_load(f)
-    #             for key, val in sql.items():
-    #                 conn.execute(text(val))
-    #         conn.commit()
+    inspector = inspect(etl_conn)
+    tnames = inspector.get_table_names()
+    
+    if not tnames:
+        with etl_conn.connect() as conn:
+            with open("sqlscripts.yml", "r") as f:
+                sql = yaml.safe_load(f)
+                for key, val in sql.items():
+                    conn.execute(text(val))
+            conn.commit()
 
     return co_oltp, etl_conn, etl_conn_or
