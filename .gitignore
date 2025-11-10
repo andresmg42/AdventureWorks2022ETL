@@ -1,2 +1,6 @@
 __pycache__/
 .venv
+.idea
+backups/adventure-works.sql
+backups/*.sql
+datos-cambios.txt
