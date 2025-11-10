@@ -1,0 +1,105 @@
+import pandas as pd
+from sqlalchemy import text
+from connection import connect
+from translate_language import convert_language
+
+# Conexion 
+co_oltp, etl_conn, etl_conn_or = connect()
+
+# Extrae datos desde OLTP
+#    Basado en la tabla sales.store, enlazada con la geografia
+query_reseller = text("""
+SELECT
+    s.business_entity_id AS reseller_alternate_key,
+    s.name AS reseller_name,
+    s.business_type,
+    s.number_employees,
+    s.annual_sales,
+    s.annual_revenue,
+    s.bank_name,
+    s.min_payment_type,
+    s.min_payment_amount,
+    s.product_line,
+    s.year_opened,
+    a.address_line_1 AS address_line1,
+    a.address_line_2 AS address_line2,
+    a.city,
+    a.postal_code,
+    sp.state_province_code,
+    cr.country_region_code,
+    p.phone_number AS phone
+FROM sales.store AS s
+INNER JOIN person.business_entity AS be
+    ON s.business_entity_id = be.business_entity_id
+INNER JOIN person.business_entity_address AS bea
+    ON be.business_entity_id = bea.business_entity_id
+INNER JOIN person.address AS a
+    ON bea.address_id = a.address_id
+INNER JOIN person.state_province AS sp
+    ON a.state_province_id = sp.state_province_id
+INNER JOIN person.country_region AS cr
+    ON sp.country_region_code = cr.country_region_code
+LEFT JOIN person.person_phone AS p
+    ON be.business_entity_id = p.business_entity_id
+""")
+
+df_reseller = pd.read_sql(query_reseller, co_oltp)
+print(f"Registros extraidos: {len(df_reseller)}")
+print(df_reseller.head(3))
+
+# Vincula con DimGeography para obtener la foreign key geography_key
+df_geo_with_keys = pd.read_sql(
+    text("""
+        SELECT geography_key, city, postal_code, state_province_code, country_region_code
+        FROM dim_geography;
+    """),
+    etl_conn
+)
+
+df_reseller = df_reseller.merge(
+    df_geo_with_keys,
+    on=['city', 'postal_code', 'state_province_code', 'country_region_code'],
+    how='left'
+)
+
+print("Despues del merge con DimGeography:", df_reseller.shape)
+print(df_reseller[['reseller_name', 'geography_key']].head(5))
+
+# Limpia valores y traduce campos opcionales
+# Por ejemplo business_type o product_line
+df_reseller['business_type'] = df_reseller['business_type'].fillna('Unknown')
+df_reseller['product_line'] = df_reseller['product_line'].fillna('None')
+
+df_reseller = convert_language('en', 'es', 'business_type', 'business_type_es', df_reseller)
+df_reseller = convert_language('en', 'fr', 'business_type', 'business_type_fr', df_reseller)
+
+# selecciona columnas finales segun DimReseller del DW
+final_columns = [
+    'geography_key',
+    'reseller_alternate_key',
+    'phone',
+    'business_type',
+    'reseller_name',
+    'number_employees',
+    'product_line',
+    'address_line1',
+    'address_line2',
+    'annual_sales',
+    'annual_revenue',
+    'bank_name',
+    'min_payment_type',
+    'min_payment_amount',
+    'year_opened'
+]
+
+df_to_load = df_reseller[final_columns]
+
+# Carga a la DW
+df_to_load.to_sql(
+    'dim_reseller',
+    etl_conn,
+    if_exists='append',
+    index=False
+)
+
+print("Carga finalizada en DimReseller")
