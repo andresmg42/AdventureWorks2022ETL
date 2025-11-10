@@ -84,6 +84,15 @@ def main():
     df_customer_final = transforms_customer(df_customer_raw, etl_conn, model_registry)
     load_to_dw(df_customer_final, 'dim_customer', SCHEMA, etl_conn)
 
+    # Proceso FactInternetSales (depende de DimCustomer, DimProduct, DimPromotion, DimDate, DimCurrency y DimSalesTerritory)
+    df_fact_internet_sales_raw = extract_fact_internet_sales(co_oltp)
+    df_special_offer = extract_special_offer(co_oltp)
+    df_fact_internet_sales_final = transforms_fact_internet_sales(
+        df_fact_internet_sales_raw,
+        df_special_offer,
+        etl_conn
+    )
+    load_to_dw(df_fact_internet_sales_final, 'fact_internet_sales', SCHEMA, etl_conn)
 
 if __name__ == "__main__":
     main()

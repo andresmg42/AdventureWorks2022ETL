@@ -306,3 +306,67 @@ def transforms_customer(df_customer_base: pd.DataFrame, etl_conn: Engine, model_
     df_customer_base['yearly_income'] = df_customer_base['yearly_income'].apply(upper_income)
 
     return df_customer_base
+
+def transforms_fact_internet_sales(df: pd.DataFrame, df_special_offer: pd.DataFrame, etl_conn: Engine):
+    print("TRANSFORM: Transformando fact internet sales")
+    df_product = pd.read_sql_table('dim_product', etl_conn)
+    df_promotion = pd.read_sql_table('dim_promotion', etl_conn)
+    df_currency = pd.read_sql_table('dim_currency', etl_conn)
+    df_sales_territory = pd.read_sql_table('dim_sales_territory', etl_conn)
+    df_customer = pd.read_sql_table('dim_customer', etl_conn)
+
+    df_product = df_product.drop_duplicates(subset=['product_alternate_key'])
+    df_special_offer.drop_duplicates(subset=['product_number'], inplace=True)
+
+    df = df.merge(
+        df_product[['product_key', 'product_alternate_key']],
+        left_on='product_number',
+        right_on='product_alternate_key',
+        how='left'
+    )
+
+    df = df.merge(
+        df_special_offer,
+        on='product_number',
+        how='left'
+    ).drop(['product_number'], axis=1)
+
+    df = df.merge(
+        df_promotion[['promotion_alternate_key', 'promotion_key']],
+        left_on='special_offer_id',
+        right_on='promotion_alternate_key',
+        how='left'
+    ).drop(['special_offer_id', 'promotion_alternate_key'], axis=1)
+
+    df = df.merge(
+        df_currency[['currency_key', 'currency_alternate_key']],
+        left_on='to_currency_code',
+        right_on='currency_alternate_key',
+        how='left'
+    ).drop(['currency_alternate_key', 'to_currency_code'], axis=1)
+
+    df = df.merge(
+        df_sales_territory[['sales_territory_key', 'sales_territory_alternate_key']],
+        left_on='territory_id',
+        right_on='sales_territory_alternate_key',
+        how='left'
+    ).drop(['territory_id', 'sales_territory_alternate_key'], axis=1)
+
+    df['revision_number'] = df['revision_number'].apply(lambda x: 1 if x == 8 else 2)
+
+    df.drop(['product_alternate_key'], axis=1, inplace=True)
+
+    df['order_date_key'] = df['order_date'].dt.strftime('%Y%m%d').astype(int)
+    df['due_date_key'] = df['due_date'].dt.strftime('%Y%m%d').astype(int)
+    df['ship_date_key'] = df['ship_date'].dt.strftime('%Y%m%d').astype(int)
+
+    df = df.merge(
+        df_customer[['customer_key', 'customer_alternate_key']],
+        left_on='account_number',
+        right_on='customer_alternate_key',
+        how='left'
+    )
+
+    df = df.drop(columns=['customer_alternate_key', 'account_number'])
+
+    return df
