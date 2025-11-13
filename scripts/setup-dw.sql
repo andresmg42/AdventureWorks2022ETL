@@ -265,6 +265,37 @@ CREATE TABLE IF NOT EXISTS dw.fact_internet_sales (
     CONSTRAINT fact_internet_sales_pkey PRIMARY KEY (sales_order_number, sales_order_line_number)
 );
 
+CREATE TABLE IF NOT EXISTS dw.fact_reseller_sales (
+    product_key INT NOT NULL,
+    order_date_key INT NOT NULL,
+    due_date_key INT NOT NULL,
+    ship_date_key INT NOT NULL,
+    reseller_key INT NOT NULL,
+    employee_key INT NOT NULL,
+    promotion_key INT NOT NULL,
+    currency_key INT NOT NULL,
+    sales_territory_key INT NOT NULL,
+    sales_order_number VARCHAR(20) NOT NULL,
+    sales_order_line_number SMALLINT NOT NULL,
+    revision_number SMALLINT NULL,
+    order_quantity SMALLINT NULL,
+    unit_price NUMERIC(19, 4) NULL,
+    extended_amount NUMERIC(19, 4) NULL,
+    unit_price_discount_pct FLOAT8 NULL,
+    discount_amount FLOAT8 NULL,
+    product_standard_cost NUMERIC(19, 4) NULL,
+    total_product_cost NUMERIC(19, 4) NULL,
+    sales_amount NUMERIC(19, 4) NULL,
+    tax_amt NUMERIC(19, 4) NULL,
+    freight NUMERIC(19, 4) NULL,
+    carrier_tracking_number VARCHAR(25) NULL,
+    customer_po_number VARCHAR(25) NULL,
+    order_date TIMESTAMP(3) NULL,
+    due_date TIMESTAMP(3) NULL,
+    ship_date TIMESTAMP(3) NULL,
+    CONSTRAINT fact_reseller_sales_pkey PRIMARY KEY (sales_order_number, sales_order_line_number)
+);
+
 ALTER TABLE dw.dim_customer ADD CONSTRAINT dim_customer_geography_key_fkey FOREIGN KEY(geography_key) REFERENCES dw.dim_geography (geography_key);
 ALTER TABLE dw.dim_employee ADD CONSTRAINT dim_employee_parent_employee_key_fkey FOREIGN KEY(parent_employee_key) REFERENCES dw.dim_employee (employee_key);
 ALTER TABLE dw.dim_employee ADD CONSTRAINT dim_employee_sales_territory_key_fkey FOREIGN KEY(sales_territory_key) REFERENCES dw.dim_sales_territory (sales_territory_key);
@@ -280,3 +311,12 @@ ALTER TABLE dw.fact_internet_sales ADD CONSTRAINT fact_internet_sales_ship_date_
 ALTER TABLE dw.fact_internet_sales ADD CONSTRAINT fact_internet_sales_product_key_fkey FOREIGN KEY(product_key) REFERENCES dw.dim_product (product_key);
 ALTER TABLE dw.fact_internet_sales ADD CONSTRAINT fact_internet_sales_promotion_key_fkey FOREIGN KEY(promotion_key) REFERENCES dw.dim_promotion (promotion_key);
 ALTER TABLE dw.fact_internet_sales ADD CONSTRAINT fact_internet_sales_sales_territory_key_fkey FOREIGN KEY(sales_territory_key) REFERENCES dw.dim_sales_territory (sales_territory_key);
+ALTER TABLE dw.fact_reseller_sales ADD CONSTRAINT fact_reseller_sales_currency_key_fkey FOREIGN KEY(currency_key) REFERENCES dw.dim_currency (currency_key);
+ALTER TABLE dw.fact_reseller_sales ADD CONSTRAINT fact_reseller_sales_order_date_key_fkey FOREIGN KEY(order_date_key) REFERENCES dw.dim_date (date_key);
+ALTER TABLE dw.fact_reseller_sales ADD CONSTRAINT fact_reseller_sales_due_date_key_fkey FOREIGN KEY(due_date_key) REFERENCES dw.dim_date (date_key);
+ALTER TABLE dw.fact_reseller_sales ADD CONSTRAINT fact_reseller_sales_ship_date_key_fkey FOREIGN KEY(ship_date_key) REFERENCES dw.dim_date (date_key);
+ALTER TABLE dw.fact_reseller_sales ADD CONSTRAINT fact_reseller_sales_employee_key_fkey FOREIGN KEY(employee_key) REFERENCES dw.dim_employee (employee_key);
+ALTER TABLE dw.fact_reseller_sales ADD CONSTRAINT fact_reseller_sales_product_key_fkey FOREIGN KEY(product_key) REFERENCES dw.dim_product (product_key);
+ALTER TABLE dw.fact_reseller_sales ADD CONSTRAINT fact_reseller_sales_promotion_key_fkey FOREIGN KEY(promotion_key) REFERENCES dw.dim_promotion (promotion_key);
+ALTER TABLE dw.fact_reseller_sales ADD CONSTRAINT fact_reseller_sales_reseller_key_fkey FOREIGN KEY(reseller_key) REFERENCES dw.dim_reseller (reseller_key);
+ALTER TABLE dw.fact_reseller_sales ADD CONSTRAINT fact_reseller_sales_sales_territory_key_fkey FOREIGN KEY(sales_territory_key) REFERENCES dw.dim_sales_territory (sales_territory_key);
