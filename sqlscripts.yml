@@ -103,9 +103,7 @@ create_dw_schema: |
 
   CREATE TABLE dim_employee (
       employee_key INT GENERATED ALWAYS AS IDENTITY NOT NULL,
-      parent_employee_key INT NULL,
       employee_national_id_alternate_key VARCHAR(15) NULL,
-      parent_employee_national_id_alternate_key VARCHAR(15) NULL,
       sales_territory_key INT NULL,
       first_name VARCHAR(50) NOT NULL,
       last_name VARCHAR(50) NOT NULL,
@@ -483,7 +481,6 @@ create_dw_schema: |
   ALTER TABLE dim_account ADD CONSTRAINT dim_account_parent_account_key_fkey FOREIGN KEY(parent_account_key) REFERENCES dim_account (account_key);
   ALTER TABLE dim_customer ADD CONSTRAINT dim_customer_geography_key_fkey FOREIGN KEY(geography_key) REFERENCES dim_geography (geography_key);
   ALTER TABLE dim_department_group ADD CONSTRAINT dim_department_group_parent_department_group_key_fkey FOREIGN KEY(parent_department_group_key) REFERENCES dim_department_group (department_group_key);
-  ALTER TABLE dim_employee ADD CONSTRAINT dim_employee_parent_employee_key_fkey FOREIGN KEY(parent_employee_key) REFERENCES dim_employee (employee_key);
   ALTER TABLE dim_employee ADD CONSTRAINT dim_employee_sales_territory_key_fkey FOREIGN KEY(sales_territory_key) REFERENCES dim_sales_territory (sales_territory_key);
   ALTER TABLE dim_geography ADD CONSTRAINT dim_geography_sales_territory_key_fkey FOREIGN KEY(sales_territory_key) REFERENCES dim_sales_territory (sales_territory_key);
   ALTER TABLE dim_organization ADD CONSTRAINT dim_organization_currency_key_fkey FOREIGN KEY(currency_key) REFERENCES dim_currency (currency_key);

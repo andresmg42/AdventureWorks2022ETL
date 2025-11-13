@@ -14,13 +14,13 @@ ETL_PRO:
   host: 127.0.0.1
   port: 5432
 
-# ETL_PRO_OR:
-#  drivername: postgresql
-#  dbname: adventure_works_dw_original
-#  user: andres
-#  password: 12345
-#  host: 127.0.0.1
-#  port: 5432
+ETL_PRO_OR:
+ drivername: postgresql
+ dbname: adventure_works_dw_original
+ user: andres
+ password: 12345
+ host: 127.0.0.1
+ port: 5432
 
 LOAD_DIMENSIONS:
   True
