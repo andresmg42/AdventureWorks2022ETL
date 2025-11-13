@@ -69,9 +69,7 @@ CREATE TABLE IF NOT EXISTS dw.dim_date (
 
 CREATE TABLE IF NOT EXISTS dw.dim_employee (
     employee_key INT GENERATED ALWAYS AS IDENTITY NOT NULL,
-    parent_employee_key INT NULL,
     employee_national_id_alternate_key VARCHAR(15) NULL,
-    parent_employee_national_id_alternate_key VARCHAR(15) NULL,
     sales_territory_key INT NULL,
     first_name VARCHAR(50) NOT NULL,
     last_name VARCHAR(50) NOT NULL,
@@ -297,7 +295,6 @@ CREATE TABLE IF NOT EXISTS dw.fact_reseller_sales (
 );
 
 ALTER TABLE dw.dim_customer ADD CONSTRAINT dim_customer_geography_key_fkey FOREIGN KEY(geography_key) REFERENCES dw.dim_geography (geography_key);
-ALTER TABLE dw.dim_employee ADD CONSTRAINT dim_employee_parent_employee_key_fkey FOREIGN KEY(parent_employee_key) REFERENCES dw.dim_employee (employee_key);
 ALTER TABLE dw.dim_employee ADD CONSTRAINT dim_employee_sales_territory_key_fkey FOREIGN KEY(sales_territory_key) REFERENCES dw.dim_sales_territory (sales_territory_key);
 ALTER TABLE dw.dim_geography ADD CONSTRAINT dim_geography_sales_territory_key_fkey FOREIGN KEY(sales_territory_key) REFERENCES dw.dim_sales_territory (sales_territory_key);
 ALTER TABLE dw.dim_product ADD CONSTRAINT dim_product_product_subcategory_key_fkey FOREIGN KEY(product_subcategory_key) REFERENCES dw.dim_product_subcategory (product_subcategory_key);

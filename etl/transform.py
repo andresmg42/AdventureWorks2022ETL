@@ -49,7 +49,7 @@ def transform_geography(df: pd.DataFrame, etl_conn: Engine, model_registry: Mode
     df_sales_territory_keys = pd.read_sql(
         text("""
              SELECT sales_territory_key, sales_territory_alternate_key
-             FROM dim_sales_territory
+             FROM dw.dim_sales_territory
              """),
         etl_conn
     )
