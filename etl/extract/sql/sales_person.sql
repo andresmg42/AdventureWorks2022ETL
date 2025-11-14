@@ -1,0 +1,2 @@
+SELECT business_entity_id AS employee_alternate_key, territory_id
+FROM sales.sales_person;

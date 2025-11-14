@@ -1,6 +1,6 @@
 import pandas as pd
 
-from etl.extract import *
+from etl.extract.extract import *
 from etl.transform import *
 from etl.load import load_to_dw
 from connection import connect

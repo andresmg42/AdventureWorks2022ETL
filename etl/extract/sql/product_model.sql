@@ -1,0 +1,2 @@
+SELECT product_model_id, name
+FROM production.product_model
