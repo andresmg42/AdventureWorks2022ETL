@@ -481,3 +481,135 @@ def transforms_fact_internet_sales(df: pd.DataFrame, df_special_offer: pd.DataFr
     df = df.drop(columns=['customer_alternate_key', 'account_number'])
 
     return df
+
+def transforms_fact_reseller_tables(
+        df_reseller_base: pd.DataFrame,
+        df_special_offer: pd.DataFrame,
+        df_table_currency: pd.DataFrame,
+        etl_conn: Engine
+) -> pd.DataFrame:
+    print("TRANSFORM: Transformando fact reseller sales")
+    df_product = pd.read_sql_table('dim_product', etl_conn)
+    df_reseller = pd.read_sql_table('dim_reseller', etl_conn)
+    df_employee = pd.read_sql_table('dim_employee', etl_conn)
+    df_currency = pd.read_sql_table('dim_currency', etl_conn)
+    df_sales_territory = pd.read_sql_table('dim_sales_territory', etl_conn)
+    df_promotion = pd.read_sql_table('dim_promotion', etl_conn)
+
+    df_product['start_date'] = pd.to_datetime(df_product['start_date'])
+    df_product['end_date'] = pd.to_datetime(df_product['end_date'])
+    df_product['start_date'] = df_product['start_date'].dt.tz_localize('UTC')
+    df_product['end_date'] = df_product['end_date'].dt.tz_localize('UTC')
+
+    df_reseller_base = df_reseller_base.merge(
+        df_product,
+        left_on='product_number',
+        right_on='product_alternate_key',
+        how='left'
+    )
+
+    historical_condition = (df_reseller_base['order_date'] >= df_reseller_base['start_date']) & (
+                df_reseller_base['order_date'] <= df_reseller_base['end_date'])
+
+    actual_condition = ((df_reseller_base['order_date'] >= df_reseller_base['start_date'])
+                       & (df_reseller_base['end_date'].isnull()))
+
+    df_reseller_base = df_reseller_base[historical_condition | actual_condition].copy()
+
+    df_reseller_base['reseller_account_number'] = df_reseller_base['reseller_account_number'].astype(str)
+    df_reseller['reseller_alternate_key'] = df_reseller['reseller_alternate_key'].astype(str)
+
+    df_reseller_base = df_reseller_base.merge(
+        df_reseller[['reseller_key', 'reseller_alternate_key']],
+        left_on='reseller_account_number',
+        right_on='reseller_alternate_key',
+        how='left'
+    ).drop(['reseller_id', 'reseller_account_number', 'reseller_alternate_key'], axis=1)
+
+    df_reseller_base['employee_national_id'] = df_reseller_base['employee_national_id'].astype(str)
+    df_employee['employee_national_id_alternate_key'] = df_employee['employee_national_id_alternate_key'].astype(str)
+
+    df_reseller_base = df_reseller_base.merge(
+        df_employee[['employee_key', 'employee_national_id_alternate_key']],
+        left_on='employee_national_id',
+        right_on='employee_national_id_alternate_key',
+        how='left'
+    ).drop(['sales_person_id', 'employee_national_id', 'employee_national_id_alternate_key'], axis=1)
+
+    df_reseller_base = df_reseller_base.merge(
+        df_special_offer,
+        left_on='sales_order_detail_id',
+        right_index=True,
+        how='left'
+    )
+
+    df_reseller_base = df_reseller_base.merge(
+        df_promotion[['promotion_key', 'promotion_alternate_key']],
+        left_on='special_offer_id',
+        right_on='promotion_alternate_key',
+        how='left'
+    ).drop(['special_offer_id', 'promotion_alternate_key'], axis=1)
+
+    df_reseller_base = df_reseller_base.merge(
+        df_table_currency,
+        on='currency_rate_id',
+        how='left'
+    )
+
+    default_currency_code = 'USD'
+
+    df_reseller_base['to_currency_code'] = df_reseller_base['to_currency_code'].fillna(default_currency_code)
+
+    df_reseller_base.drop('currency_rate_id', axis=1, inplace=True)
+
+    df_reseller_base = df_reseller_base.merge(
+        df_currency[['currency_key', 'currency_alternate_key']],
+        left_on='to_currency_code',
+        right_on='currency_alternate_key',
+        how='left'
+    ).drop(['to_currency_code', 'currency_alternate_key'], axis=1)
+
+    df_reseller_base = df_reseller_base.merge(
+        df_sales_territory[['sales_territory_key', 'sales_territory_alternate_key']],
+        left_on='territory_id',
+        right_on='sales_territory_alternate_key',
+        how='left'
+    ).drop(['territory_id', 'sales_territory_alternate_key'], axis=1)
+
+    df_reseller_base['order_date_key'] = df_reseller_base['order_date'].dt.strftime('%Y%m%d').astype(int)
+    df_reseller_base['due_date_key'] = df_reseller_base['due_date'].dt.strftime('%Y%m%d').astype(int)
+    df_reseller_base['ship_date_key'] = df_reseller_base['ship_date'].dt.strftime('%Y%m%d').astype(int)
+
+    final_columns = [
+        'product_key',
+        'order_date_key',
+        'due_date_key',
+        'ship_date_key',
+        'reseller_key',
+        'employee_key',
+        'promotion_key',
+        'currency_key',
+        'sales_territory_key',
+        'sales_order_number',
+        'sales_order_line_number',
+        'revision_number',
+        'order_quantity',
+        'unit_price',
+        'extended_amount',
+        'unit_price_discount_pct',
+        'discount_amount',
+        'product_standard_cost',
+        'total_product_cost',
+        'sales_amount',
+        'tax_amt',
+        'freight',
+        'carrier_tracking_number',
+        'customer_po_number',
+        'order_date',
+        'due_date',
+        'ship_date'
+    ]
+
+    df_reseller_base = df_reseller_base[final_columns]
+
+    return df_reseller_base
