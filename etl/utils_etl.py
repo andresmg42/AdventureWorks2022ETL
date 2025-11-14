@@ -8,6 +8,12 @@ def get_sales_territory_image(row):
         image_bytes=f.read()
     return image_bytes
 
+def get_sales_employee_image(row):
+    filename_path=f"images/employee/employee_{row['employee_national_id_alternate_key']}.png"
+    with open(filename_path,'rb') as f:
+        image_bytes=f.read()
+    return image_bytes
+
 def get_size_range(size):
     if not size:
         return 'NA'

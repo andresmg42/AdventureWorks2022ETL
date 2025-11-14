@@ -1,6 +1,6 @@
 import pandas as pd
 from sqlalchemy import text, Engine
-from etl.utils_etl import get_sales_territory_image, get_size_range, extract_demographics, upper_income
+from etl.utils_etl import get_sales_territory_image, get_sales_employee_image, get_size_range, extract_demographics, upper_income
 from utils.model_loader import ModelRegistry
 from utils.translate_language import convert_language
 from utils.days_and_moths import english_days, english_months, spanish_days, spanish_months, french_days, french_months
@@ -307,7 +307,78 @@ def transforms_customer(df_customer_base: pd.DataFrame, etl_conn: Engine, model_
 
     return df_customer_base
 
-def transforms_fact_internet_sales(df: pd.DataFrame, df_special_offer: pd.DataFrame, etl_conn: Engine):
+def transform_employee(
+        df_employee_base: pd.DataFrame,
+        df_emergency_contact: pd.DataFrame,
+        df_sales_person: pd.DataFrame,
+        df_pay_frequency: pd.DataFrame,
+        df_base_rate: pd.DataFrame,
+        etl_conn: Engine,
+) -> pd.DataFrame:
+    print("TRANSFORM: Transformando employee")
+
+    df_sales_territory = pd.read_sql(
+        text("SELECT sales_territory_key, sales_territory_alternate_key FROM dim_sales_territory;"),
+        etl_conn
+    )
+
+    df_employee_base = df_employee_base.merge(
+        df_sales_person,
+        on='employee_alternate_key',
+        how='left'
+    )
+
+    df_employee_base = df_employee_base.merge(
+        df_sales_territory,
+        left_on='territory_id',
+        right_on='sales_territory_alternate_key',
+        how='left'
+    ).drop(['territory_id', 'sales_territory_alternate_key'], axis=1)
+
+    df_employee_base['name_style'] = 0
+    df_employee_base['sales_person_flag'] = df_employee_base['sales_territory_key'].notnull().astype(int)
+    df_employee_base['current_flag'] = df_employee_base['current_flag'].astype(int)
+
+    for col in ['department_name', 'title', 'job_title']:
+        df_employee_base[col] = df_employee_base[col].fillna('Unknown')
+
+    df_employee_base = df_employee_base.merge(
+        df_base_rate,
+        left_on='employee_national_id_alternate_key',
+        right_on='national_idnumber',
+        how='left'
+    )
+
+    df_employee_base = df_employee_base.merge(
+        df_emergency_contact,
+        left_on='employee_national_id_alternate_key',
+        right_on='national_idnumber',
+        how='left'
+    )
+
+    df_employee_base['employee_photo'] = df_employee_base.apply(get_sales_employee_image,axis=1)
+
+    df_employee_base = df_employee_base.merge(
+        df_pay_frequency,
+        right_on='national_idnumber',
+        left_on='employee_national_id_alternate_key',
+        how='left'
+    )
+
+    df_employee_base['status'] = df_employee_base['end_date'].apply(lambda x: 'Current' if x is None else None)
+    df_employee_base['salaried_flag'] = df_employee_base['salaried_flag'].apply(lambda x: 1 if x else 0)
+
+    df_employee_base=df_employee_base.drop(
+        ['national_idnumber_x', 'suffix', 'organization_level',
+         'national_idnumber_y', 'employee_alternate_key', 'job_title', 'national_idnumber'],
+        axis=1
+    )
+
+    return df_employee_base
+
+
+
+def transforms_fact_internet_sales(df: pd.DataFrame, df_special_offer: pd.DataFrame, etl_conn: Engine) -> pd.DataFrame:
     print("TRANSFORM: Transformando fact internet sales")
     df_product = pd.read_sql_table('dim_product', etl_conn)
     df_promotion = pd.read_sql_table('dim_promotion', etl_conn)

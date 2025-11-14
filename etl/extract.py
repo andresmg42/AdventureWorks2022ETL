@@ -176,6 +176,136 @@ def extract_customer(co_oltp: Engine) -> pd.DataFrame:
         """,
         co_oltp)
 
+def extract_emergency_contact_data(co_oltp: Engine) -> pd.DataFrame:
+    print("EXTRACT: Leyendo contact table")
+    return pd.read_sql(
+        """
+        SELECT
+            p.first_name || ' ' || p.last_name AS emergency_contact_name,
+            t1.phone_number AS emergency_contact_phone,
+            e.national_idnumber 
+        FROM
+            hr.employee AS e
+        JOIN
+            person.person AS p ON e.business_entity_id = p.business_entity_id
+        JOIN
+            -- Subquery to rank and select the best phone number
+            (
+                SELECT
+                    pp.business_entity_id,
+                    pp.phone_number,
+                    -- Assign a rank based on the phone number type
+                    ROW_NUMBER() OVER (
+                        PARTITION BY pp.business_entity_id 
+                        ORDER BY
+                            CASE pt.name
+                                WHEN 'Work' THEN 1  
+                                WHEN 'Home' THEN 2
+                                WHEN 'Cell' THEN 3  
+                                ELSE 4
+                            END
+                    ) AS rn
+                FROM
+                    person.person_phone AS pp
+                JOIN
+                    person.phone_number_type AS pt ON pt.phone_number_type_id = pp.phone_number_type_id
+            ) AS t1 ON t1.business_entity_id = e.business_entity_id
+        WHERE
+            t1.rn = 1;
+        """,
+        co_oltp)
+
+def extract_sales_person(co_oltp: Engine) -> pd.DataFrame:
+    print("EXTRACT: Leyendo sales person")
+    return pd.read_sql(
+        text("SELECT business_entity_id AS employee_alternate_key, territory_id FROM sales.sales_person;"),
+        co_oltp
+    )
+
+def extract_pay_frequency(co_oltp: Engine) -> pd.DataFrame:
+    print("EXTRACT: Leyendo pay frequency")
+    return pd.read_sql(
+        """
+        SELECT
+            E.national_idnumber,
+            LatestPay.pay_frequency
+        FROM
+            hr.employee AS E
+        -- LEFT JOIN LATERAL is the exact equivalent of OUTER APPLY
+        LEFT JOIN LATERAL (
+            SELECT
+                PH.pay_frequency
+            FROM
+                hr.employee_pay_history AS PH
+            WHERE
+                PH.business_entity_id = E.business_entity_id
+            ORDER BY
+                PH.rate_change_date DESC
+            LIMIT 1 
+        ) AS LatestPay ON true;
+        """,
+        co_oltp)
+
+def extract_base_rate(co_oltp: Engine) -> pd.DataFrame:
+    print("EXTRACT: Leyendo base rate")
+    return pd.read_sql(
+        """
+        SELECT e.national_idnumber,h.rate as base_rate
+        FROM hr.employee as e
+            JOIN hr.employee_pay_history as h
+            ON e.business_entity_id=h.business_entity_id
+            WHERE h.rate_change_date=
+            (
+                SELECT MAX(rate_change_date)
+                FROM hr.employee_pay_history
+                WHERE business_entity_id=e.business_entity_id
+            )
+        """,
+        co_oltp)
+
+
+def extract_employee(co_otlp: Engine) -> pd.DataFrame:
+    print("EXTRACT: Leyendo employee")
+    return pd.read_sql(
+        """
+        SELECT
+            e.business_entity_id AS employee_alternate_key,
+            p.title,
+            p.first_name,
+            p.middle_name,
+            p.last_name,
+            p.suffix,
+            e.gender,
+            e.marital_status,
+            e.birth_date,
+            e.hire_date,
+            e.salaried_flag,
+            e.vacation_hours,
+            e.sick_leave_hours,
+            e.current_flag,
+            e.organization_level,
+            e.job_title,
+            e.login_id,
+            ea.email_address,
+            e.national_idnumber as employee_national_id_alternate_key,
+            pp.phone_number AS phone,
+            d.name AS department_name,
+            h.start_date,
+            h.end_date
+        FROM hr.employee AS e
+        INNER JOIN person.person AS p
+            ON e.business_entity_id = p.business_entity_id
+        LEFT JOIN person.email_address AS ea
+            ON p.business_entity_id = ea.business_entity_id
+        LEFT JOIN person.person_phone AS pp
+            ON p.business_entity_id = pp.business_entity_id
+        LEFT JOIN hr.employee_department_history AS h
+            ON e.business_entity_id = h.business_entity_id
+        LEFT JOIN hr.department AS d
+            ON h.department_id = d.department_id
+        """,
+        co_otlp)
+
 def extract_special_offer(co_oltp: Engine) -> pd.DataFrame:
     print("EXTRACT: Leyendo special offer")
     return pd.read_sql(
