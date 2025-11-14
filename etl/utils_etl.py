@@ -77,6 +77,36 @@ def extract_demographics(xml_string):
     except Exception:
         return none_xml_columns_dict
 
+def parse_store_demographics(xml_string):
+    if pd.isna(xml_string):
+        return {}
+
+    try:
+        root = ET.fromstring(xml_string)
+        ns = {'ns': root.tag.split('}')[0].strip('{')}
+
+        def namespace_find(tag):
+            el = root.find(f'ns:{tag}', ns)
+            return el.text if el is not None else None
+
+
+        result = {
+            'annual_sales': namespace_find('AnnualSales'),
+            'annual_revenue': namespace_find('AnnualRevenue'),
+            'bank_name': namespace_find('BankName'),
+            'business_type': namespace_find('BusinessType'),
+            'year_opened': namespace_find('YearOpened'),
+            'product_line': namespace_find('Specialty'),
+            'number_employees': namespace_find('NumberEmployees'),
+            'min_payment_type': None,
+            'min_payment_amount': None,
+        }
+        return result
+
+    except Exception as e:
+        return {}
+
+
 def upper_income(x):
     if not isinstance(x,str):
         return np.nan

@@ -1,6 +1,6 @@
 import pandas as pd
 from sqlalchemy import text, Engine
-from etl.utils_etl import get_sales_territory_image, get_sales_employee_image, get_size_range, extract_demographics, upper_income
+from etl.utils_etl import get_sales_territory_image, get_sales_employee_image, get_size_range, extract_demographics, parse_store_demographics, upper_income
 from utils.model_loader import ModelRegistry
 from utils.translate_language import convert_language
 from utils.days_and_moths import english_days, english_months, spanish_days, spanish_months, french_days, french_months
@@ -376,6 +376,46 @@ def transform_employee(
 
     return df_employee_base
 
+def transform_reseller(df_reseller_base: pd.DataFrame, etl_conn: Engine):
+    print("TRANSFORM: Transformando reseller")
+    demographics_df = df_reseller_base['demographics'].apply(parse_store_demographics).apply(pd.Series)
+    df_reseller_base = pd.concat([df_reseller_base.drop('demographics', axis=1), demographics_df], axis=1)
+
+    business_type_map = {
+        'BM': 'Warehouse',
+        'OS': 'Value Added Reseller',
+        'BS': 'Specialty Bike Shop'
+    }
+
+    df_reseller_base['business_type'] = df_reseller_base['business_type'].map(business_type_map)
+
+    df_geo_with_keys = pd.read_sql(
+        """
+            SELECT geography_key, city, postal_code, state_province_name, english_country_region_name as country_region_name
+            FROM dim_geography;
+        """,
+        etl_conn)
+
+    df_reseller_base = df_reseller_base.merge(
+        df_geo_with_keys,
+        on=['city', 'postal_code', 'state_province_name', 'country_region_name'],
+        how='left'
+    )
+
+    df_reseller_base['business_type'] = df_reseller_base['business_type'].fillna('Unknown')
+    df_reseller_base['product_line'] = df_reseller_base['product_line'].fillna('None')
+
+    final_columns = [
+        'geography_key', 'reseller_alternate_key', 'phone', 'business_type',
+        'reseller_name', 'number_employees', 'order_frequency', 'order_month',
+        'first_order_year', 'last_order_year', 'product_line', 'address_line1',
+        'address_line2', 'annual_sales', 'bank_name', 'min_payment_type',
+        'min_payment_amount', 'annual_revenue', 'year_opened'
+    ]
+
+    df_reseller_base = df_reseller_base[final_columns]
+
+    return df_reseller_base
 
 
 def transforms_fact_internet_sales(df: pd.DataFrame, df_special_offer: pd.DataFrame, etl_conn: Engine) -> pd.DataFrame:

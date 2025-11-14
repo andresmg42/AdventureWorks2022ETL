@@ -101,7 +101,9 @@ def main():
     load_to_dw(df_employee_final, 'dim_employee', SCHEMA, etl_conn)
 
     # Proceso DimReseller (Depende de DimGeography)
-
+    df_reseller_raw = extract_reseller(co_oltp)
+    df_reseller_final = transform_reseller(df_reseller_raw, etl_conn)
+    load_to_dw(df_reseller_final, 'dim_reseller', SCHEMA, etl_conn)
 
     # Proceso FactInternetSales (depende de DimCustomer, DimProduct, DimPromotion, DimDate, DimCurrency y DimSalesTerritory)
     # df_fact_internet_sales_raw = extract_fact_internet_sales(co_oltp)
