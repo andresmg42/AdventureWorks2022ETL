@@ -23,7 +23,7 @@ def transforms_fact_reseller_sales(
         df_dim_employee: pd.DataFrame,
         df_dim_reseller: pd.DataFrame,
 ) -> pd.DataFrame:
-    print("TRANSFORM: Transformando fact reseller sales (Optimizado)")
+    print("TRANSFORM: Transformando fact reseller sales")
 
     product_dim_clean = df_dim_product.copy()
     product_dim_clean['start_date'] = pd.to_datetime(product_dim_clean['start_date']).dt.tz_localize('UTC')
