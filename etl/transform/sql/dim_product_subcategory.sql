@@ -1,0 +1,2 @@
+SELECT product_subcategory_key, product_subcategory_alternate_key
+FROM dim_product_subcategory

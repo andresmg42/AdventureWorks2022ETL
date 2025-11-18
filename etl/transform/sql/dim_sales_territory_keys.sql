@@ -1,0 +1,2 @@
+SELECT sales_territory_key, sales_territory_alternate_key
+FROM dw.dim_sales_territory
