@@ -1,6 +1,7 @@
-from etl.extract.etl_context import ETLContext
+from etl.etl_context import ETLContext
 
 
+# Proceso DimSalesTerritory (independiente)
 def sales_territory_pipeline(ctx: ETLContext):
     from etl.extract.extract import extract_sales_territory
     from etl.transform.sales_territory_transform import transform_sales_territory
@@ -10,6 +11,7 @@ def sales_territory_pipeline(ctx: ETLContext):
     df_sales_territory_final = transform_sales_territory(df_sales_territory_raw)
     load_to_dw(df_sales_territory_final, 'dim_sales_territory', ctx.dest_schema, ctx.dw_engine)
 
+# Proceso DimCurrency (independiente)
 def currency_pipeline(ctx: ETLContext):
     from etl.extract.extract import extract_currency
     from etl.transform.currency_transform import transform_currency
@@ -19,6 +21,7 @@ def currency_pipeline(ctx: ETLContext):
     df_currency_final = transform_currency(df_currency_raw)
     load_to_dw(df_currency_final, 'dim_currency', ctx.dest_schema, ctx.dw_engine)
 
+# Proceso DimGeography (depende de DimSalesTerritory)
 def geography_pipeline(ctx: ETLContext):
     from etl.extract.extract import extract_geography
     from etl.transform.geography_transform import transform_geography
@@ -28,12 +31,14 @@ def geography_pipeline(ctx: ETLContext):
     df_geography_final = transform_geography(df_geography_raw, ctx.dim_cache.get("dim_sales_territory"), ctx.model_registry)
     load_to_dw(df_geography_final, 'dim_geography', ctx.dest_schema, ctx.dw_engine)
 
+# Proceso DimDate (independiente)
 def date_pipeline(ctx: ETLContext):
     from etl.transform.date_transform import transform_date
     from etl.load import load_to_dw
     df_date_final = transform_date()
     load_to_dw(df_date_final, 'dim_date', ctx.dest_schema, ctx.dw_engine)
 
+# Proceso DimPromotion (independiente)
 def promotion_pipeline(ctx: ETLContext):
     from etl.extract.extract import extract_promotion
     from etl.transform.promotion_transform import transform_promotion
@@ -43,6 +48,7 @@ def promotion_pipeline(ctx: ETLContext):
     df_promotion_final = transform_promotion(df_promotion_raw, ctx.model_registry)
     load_to_dw(df_promotion_final, 'dim_promotion', ctx.dest_schema, ctx.dw_engine)
 
+# Proceso DimProductCategory (independiente)
 def product_category_pipeline(ctx: ETLContext):
     from etl.extract.extract import extract_product_category
     from etl.transform.product_transform.product_category_transform import transform_product_category
@@ -52,7 +58,7 @@ def product_category_pipeline(ctx: ETLContext):
     df_product_category_final = transform_product_category(df_product_category_raw, ctx.model_registry)
     load_to_dw(df_product_category_final, 'dim_product_category', ctx.dest_schema, ctx.dw_engine)
 
-
+# Proceso DimProductSubCategory (depende de DimProductCategory)
 def product_subcategory_pipeline(ctx: ETLContext):
     from etl.extract.extract import extract_product_subcategory
     from etl.transform.product_transform.product_subcategory_transform import transform_product_subcategory
@@ -62,6 +68,7 @@ def product_subcategory_pipeline(ctx: ETLContext):
     df_product_subcategory_final = transform_product_subcategory(df_product_subcategory_raw, ctx.dim_cache.get("dim_product_category"), ctx.model_registry)
     load_to_dw(df_product_subcategory_final, 'dim_product_subcategory', ctx.dest_schema, ctx.dw_engine)
 
+# Proceso DimProduct (depende de DimProductSubCategory)
 def product_pipeline(ctx: ETLContext):
     from etl.extract.extract import extract_product, extract_sales_order, extract_product_model, extract_large_photo, extract_product_price_list, extract_language_description
     from etl.transform.product_transform.product_transform import transform_product
@@ -89,6 +96,7 @@ def product_pipeline(ctx: ETLContext):
     )
     load_to_dw(df_product_raw_final, 'dim_product', ctx.dest_schema, ctx.dw_engine)
 
+# Proceso DimCustomer (depende de DimGeography)
 def customer_pipeline(ctx: ETLContext):
     from etl.extract.extract import extract_customer
     from etl.transform.customer_transform import transforms_customer
@@ -98,6 +106,7 @@ def customer_pipeline(ctx: ETLContext):
     df_customer_final = transforms_customer(df_customer_raw, ctx.dim_cache.get("dim_geography"), ctx.model_registry)
     load_to_dw(df_customer_final, 'dim_customer', ctx.dest_schema, ctx.dw_engine)
 
+# Proceso DimEmployee (depende de DimSalesTerritory)
 def employee_pipeline(ctx: ETLContext):
     from etl.extract.extract import extract_employee, extract_emergency_contact_data, extract_sales_person, extract_pay_frequency, extract_base_rate
     from etl.transform.employee_transform import transform_employee
@@ -120,7 +129,7 @@ def employee_pipeline(ctx: ETLContext):
     )
     load_to_dw(df_employee_final, 'dim_employee', ctx.dest_schema, ctx.dw_engine)
 
-
+# Proceso DimReseller (Depende de DimGeography)
 def reseller_pipeline(ctx: ETLContext):
     from etl.extract.extract import extract_reseller
     from etl.transform.reseller_transform import transform_reseller
@@ -130,6 +139,7 @@ def reseller_pipeline(ctx: ETLContext):
     df_reseller_final = transform_reseller(df_reseller_raw, ctx.dim_cache.get("dim_geography"))
     load_to_dw(df_reseller_final, 'dim_reseller', ctx.dest_schema, ctx.dw_engine)
 
+# Proceso FactInternetSales (depende de DimCustomer, DimProduct, DimPromotion, DimDate, DimCurrency y DimSalesTerritory)
 def fact_internet_sales_pipeline(ctx: ETLContext):
     from etl.extract.extract import extract_fact_internet_sales, extract_special_offer_internet_sales
     from etl.transform.fact_internet_sales_transform import transforms_fact_internet_sales
@@ -148,6 +158,7 @@ def fact_internet_sales_pipeline(ctx: ETLContext):
     )
     load_to_dw(df_fact_internet_sales_final, 'fact_internet_sales', ctx.dest_schema, ctx.dw_engine)
 
+# Proceso FactResellerSales (depende de DimEmployee, DimProduct, DimPromotion, DimReseller, DimCurrency y DimSalesTerritory)
 def fact_reseller_sales_pipeline(ctx: ETLContext):
     from etl.extract.extract import extract_fact_reseller_sales, extract_special_offer_reseller_sales, extract_currency_reseller_sales
     from etl.transform.fact_reseller_sales_transform import transforms_fact_reseller_sales

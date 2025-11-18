@@ -1,8 +1,6 @@
 import pandas as pd
-
-from etl.extract.extract import *
-from etl.transform import *
-from etl.load import load_to_dw
+from etl.etl_pipeline import *
+from etl.transform.readers import read_sql, load_dimension
 from connection import connect
 from utils.model_loader import ModelRegistry
 
@@ -24,109 +22,47 @@ def main():
     model_registry.preload_model('en', 'de')
     model_registry.preload_model('en', 'trk')
 
+    print("Inicializando clase ETLContext")
+    ctx = ETLContext(
+        oltp_engine=co_oltp,
+        dw_engine=etl_conn,
+        dest_schema=SCHEMA,
+        model_registry=model_registry
+    )
+
     print("Iniciando proceso ETL")
-    # Proceso DimSalesTerritory (independiente)
-    df_sales_territory_raw = extract_sales_territory(co_oltp, 'sales')
-    df_sales_territory_final = transform_sales_territory(df_sales_territory_raw)
-    load_to_dw(df_sales_territory_final,'dim_sales_territory', SCHEMA, etl_conn)
+    sales_territory_pipeline(ctx)
+    ctx.dim_cache["dim_sales_territory"] = pd.read_sql(read_sql('dim_sales_territory_keys'), ctx.dw_engine)
 
-    # Proceso DimCurrency (independiente)
-    df_currency_raw = extract_currency(co_oltp)
-    df_currency_final = transform_currency(df_currency_raw)
-    load_to_dw(df_currency_final, 'dim_currency', SCHEMA, etl_conn)
+    currency_pipeline(ctx)
+    ctx.dim_cache["dim_currency"] = load_dimension('dim_currency', ctx.dw_engine)
 
-    # Proceso DimGeography (depende de DimSalesTerritory)
-    df_geography_raw = extract_geography(co_oltp)
-    df_geography_final = transform_geography(df_geography_raw, etl_conn, model_registry)
-    load_to_dw(df_geography_final, 'dim_geography', SCHEMA, etl_conn)
+    geography_pipeline(ctx)
+    ctx.dim_cache['dim_geography'] = pd.read_sql(read_sql('dim_geography_keys'), ctx.dw_engine)
 
-    # Proceso DimDate (independiente)
-    df_date_final = transform_date()
-    load_to_dw(df_date_final, 'dim_date', SCHEMA, etl_conn)
+    date_pipeline(ctx)
+    promotion_pipeline(ctx)
 
-    # Proceso DimPromotion (independiente)
-    df_promotion_raw = extract_promotion(co_oltp, 'sales')
-    df_promotion_final = transform_promotion(df_promotion_raw, model_registry)
-    load_to_dw(df_promotion_final, 'dim_promotion', SCHEMA, etl_conn)
+    product_category_pipeline(ctx)
+    ctx.dim_cache["dim_product_category"] = load_dimension('dim_product_category', ctx.dw_engine)
 
-    # Proceso DimProductCategory (independiente)
-    df_product_category_raw = extract_product_category(co_oltp, 'production')
-    df_product_category_final = transform_product_category(df_product_category_raw, model_registry)
-    load_to_dw(df_product_category_final, 'dim_product_category', SCHEMA, etl_conn)
+    product_subcategory_pipeline(ctx)
+    ctx.dim_cache['dim_product_subcategory'] = pd.read_sql(read_sql('dim_product_subcategory'), ctx.dw_engine)
 
-    # Proceso DimProductSubCategory (depende de DimProductCategory)
-    df_product_subcategory_raw = extract_product_subcategory(co_oltp, 'production')
-    df_product_subcategory_final = transform_product_subcategory(df_product_subcategory_raw, etl_conn,model_registry)
-    load_to_dw(df_product_subcategory_final, 'dim_product_subcategory', SCHEMA, etl_conn)
+    product_pipeline(ctx)
 
-    # Proceso DimProduct (depende de DimProductSubCategory)
-    df_product_raw = extract_product(co_oltp, 'production')
-    df_sales_order = extract_sales_order(co_oltp)
-    df_product_model = extract_product_model(co_oltp)
-    df_large_photo = extract_large_photo(co_oltp)
-    df_product_price_list = extract_product_price_list(co_oltp)
-    df_language_description_raw = extract_language_description(co_oltp)
-    df_pivoted_language_description = transform_language_description(df_language_description_raw)
-    df_product_raw_final = transform_product(
-        df_product_raw,
-        df_sales_order,
-        df_product_model,
-        df_large_photo,
-        df_product_price_list,
-        df_pivoted_language_description,
-        etl_conn,
-        model_registry
-    )
-    load_to_dw(df_product_raw_final, 'dim_product', SCHEMA, etl_conn)
+    customer_pipeline(ctx)
+    employee_pipeline(ctx)
+    reseller_pipeline(ctx)
 
-    # Proceso DimCustomer (depende de DimGeography)
-    df_customer_raw = extract_customer(co_oltp)
-    df_customer_final = transforms_customer(df_customer_raw, etl_conn, model_registry)
-    load_to_dw(df_customer_final, 'dim_customer', SCHEMA, etl_conn)
+    ctx.dim_cache["dim_product"] = load_dimension('dim_product', ctx.dw_engine)
+    ctx.dim_cache["dim_promotion"] = load_dimension('dim_promotion', ctx.dw_engine)
+    ctx.dim_cache["dim_customer"] = load_dimension('dim_customer', ctx.dw_engine)
+    ctx.dim_cache["dim_employee"] = load_dimension('dim_employee', ctx.dw_engine)
+    ctx.dim_cache["dim_reseller"] = load_dimension('dim_reseller', ctx.dw_engine)
 
-    # Proceso DimEmployee (depende de DimSalesTerritory)
-    df_employee_raw = extract_employee(co_oltp)
-    df_emergency_contact = extract_emergency_contact_data(co_oltp)
-    df_sales_person = extract_sales_person(co_oltp)
-    df_pay_frequency = extract_pay_frequency(co_oltp)
-    df_base_rate = extract_base_rate(co_oltp)
-    df_employee_final = transform_employee(
-        df_employee_raw,
-        df_emergency_contact,
-        df_sales_person,
-        df_pay_frequency,
-        df_base_rate,
-        etl_conn
-    )
-    load_to_dw(df_employee_final, 'dim_employee', SCHEMA, etl_conn)
-
-    # Proceso DimReseller (Depende de DimGeography)
-    df_reseller_raw = extract_reseller(co_oltp)
-    df_reseller_final = transform_reseller(df_reseller_raw, etl_conn)
-    load_to_dw(df_reseller_final, 'dim_reseller', SCHEMA, etl_conn)
-
-    # Proceso FactInternetSales (depende de DimCustomer, DimProduct, DimPromotion, DimDate, DimCurrency y DimSalesTerritory)
-    df_fact_internet_sales_raw = extract_fact_internet_sales(co_oltp)
-    df_special_offer = extract_special_offer_internet_sales(co_oltp)
-    df_fact_internet_sales_final = transforms_fact_internet_sales(
-        df_fact_internet_sales_raw,
-        df_special_offer,
-        etl_conn
-    )
-    load_to_dw(df_fact_internet_sales_final, 'fact_internet_sales', SCHEMA, etl_conn)
-
-    # Proceso FactResellerSales (depende de DimEmployee, DimProduct, DimPromotion, DimReseller, DimCurrency y DimSalesTerritory)
-    df_fact_reseller_sales_raw = extract_fact_reseller_sales(co_oltp)
-    df_special_offer_reseller_sales = extract_special_offer_reseller_sales(co_oltp)
-    df_currency_reseller_sales = extract_currency_reseller_sales(co_oltp)
-    df_fact_reseller_sales_final = transforms_fact_reseller_tables(
-        df_fact_reseller_sales_raw,
-        df_special_offer_reseller_sales,
-        df_currency_reseller_sales,
-        etl_conn
-    )
-    load_to_dw(df_fact_reseller_sales_final, 'fact_reseller_sales', SCHEMA, etl_conn)
-
+    fact_internet_sales_pipeline(ctx)
+    fact_reseller_sales_pipeline(ctx)
 
 if __name__ == "__main__":
     main()

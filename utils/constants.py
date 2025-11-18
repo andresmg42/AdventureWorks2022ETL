@@ -1,2 +1,0 @@
-DATABASE_OWNER = 'andres'
-WAREHOUSE_SCHEME = 'dw'
