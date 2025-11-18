@@ -1,0 +1,44 @@
+services:
+  adventure-worls-oltp:
+    image: postgres:17
+    container_name: adventure-works-oltp
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: pg123
+      POSTGRES_DB: adventure_works
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./scripts/create-roles.sql:/docker-entrypoint-initdb.d/00_create_roles.sql
+      - ./backups/adventure-works.sql:/docker-entrypoint-initdb.d/base_otlp.sql
+    networks:
+      - pgnet
+
+  adventure-works-dw:
+    image: postgres:17
+    container_name: adventure-works-dw
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: pg123
+      POSTGRES_DB: adventure_works_dw
+    ports:
+      - "5433:5432"
+    volumes:
+      - ./scripts/setup-dw.sql:/docker-entrypoint-initdb.d/00_setup_dw.sql
+    networks:
+      - pgnet
+
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@admin.com
+      PGADMIN_DEFAULT_PASSWORD: pg123 
+    ports:
+      - "5050:80"
+    networks:
+      - pgnet
+
+networks:
+  pgnet:
+    driver: bridge

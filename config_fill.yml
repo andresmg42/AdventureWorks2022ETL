@@ -12,10 +12,16 @@ ETL_PRO:
   user: andres
   password: 12345
   host: 127.0.0.1
-  port: 5432
+  port: 5433
+
+#ETL_PRO_OR:
+# drivername: postgresql
+# dbname: adventure_works_dw_original
+# user: andres
+# password: 12345
+# host: 127.0.0.1
+# port: 5432
 
 LOAD_DIMENSIONS:
   True
 
-medicamentos:
-  sources/medicamentos.xls
