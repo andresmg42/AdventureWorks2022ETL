@@ -56,7 +56,7 @@ def main():
 
     # Proceso DimProductSubCategory (depende de DimProductCategory)
     df_product_subcategory_raw = extract_product_subcategory(co_oltp, 'production')
-    df_product_subcategory_final = transform_product_subcategory(df_product_subcategory_raw, etl_conn,model_registry)
+    df_product_subcategory_final = transform_product_subcategory(df_product_subcategory_raw, etl_conn,model_registry,SCHEMA)
     load_to_dw(df_product_subcategory_final, 'dim_product_subcategory', SCHEMA, etl_conn)
 
     # Proceso DimProduct (depende de DimProductSubCategory)
@@ -111,7 +111,8 @@ def main():
     df_fact_internet_sales_final = transforms_fact_internet_sales(
         df_fact_internet_sales_raw,
         df_special_offer,
-        etl_conn
+        etl_conn,
+        SCHEMA
     )
     load_to_dw(df_fact_internet_sales_final, 'fact_internet_sales', SCHEMA, etl_conn)
 
@@ -123,7 +124,8 @@ def main():
         df_fact_reseller_sales_raw,
         df_special_offer_reseller_sales,
         df_currency_reseller_sales,
-        etl_conn
+        etl_conn,
+        SCHEMA
     )
     load_to_dw(df_fact_reseller_sales_final, 'fact_reseller_sales', SCHEMA, etl_conn)
 
