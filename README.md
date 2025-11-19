@@ -20,7 +20,30 @@ source .venv/bin/activate  # En Linux o macOS
 .venv\Scripts\activate     # En Windows
 pip install -r requirements.txt
 ```
+### Nota importante – Usuarios de Debian/WSL (como Debian 12/13 y Ubuntu recientes):
 
+Si aparece el error externally-managed-environment al instalar dependencias, esto ocurre por PEP 668. Para solucionarlo, recree el entorno virtual dentro del proyecto y use el pip interno:
+
+```bash
+rm -rf .venv
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+```
+
+### Verifique que el pip activo sea el interno del entorno:
+```bash
+which pip
+```
+Debe mostrar la ruta dentro de .venv/bin/pip.
+
+### Dependencia adicional requerida
+
+Si al ejecutar el ETL aparece un error relacionado con sentencepiece, instale manualmente:
+
+```bash
+pip install sentencepiece
+```
 
 ## Montaje del sistema
 
