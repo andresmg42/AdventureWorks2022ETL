@@ -68,8 +68,8 @@ La base de datos **AdventureWorks2022** ya se encuentra en la carpeta ./backups/
    ```
 
 ---
-# RESUMEN DE LA CONEXION CON PGADMIN PARA VER LOS RESULTADOS DEL ETL.
-## Conexión desde pgAdmin
+## RESUMEN DE LA CONEXION CON PGADMIN PARA VER LOS RESULTADOS DEL ETL.
+### Conexión desde pgAdmin
 
 Utilice los siguientes parámetros de conexión:
 
