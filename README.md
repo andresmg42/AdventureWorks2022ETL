@@ -4,6 +4,8 @@ Este repositorio contiene la implementación de un proceso **ETL** para la const
 
 **Tener en cuenta que este ETL puede tardar entre 6 a 8 minutos por el proceso de traducción**
 
+## Enlace a la documentación del proyecto: [Proyecto Parte 4 ETL](https://docs.google.com/document/d/1XuoYXvlWMYJBGkiB0L7DEKg_EvLLXwmy5t-Uo7zc0Xc/edit?usp=sharing)
+
 ---
 
 ## Configuración del entorno
