@@ -142,7 +142,7 @@ def transform_product_category(df: pd.DataFrame, model_registry: ModelRegistry) 
 
     return df
 
-def transform_product_subcategory(df: pd.DataFrame, etl_conn: Engine, model_registry: ModelRegistry) -> pd.DataFrame:
+def transform_product_subcategory(df: pd.DataFrame, etl_conn: Engine, model_registry: ModelRegistry,SCHEMA) -> pd.DataFrame:
     print("TRANSFORM: Transformando product subcategory")
     df = df.rename(columns={'product_subcategory_id': 'product_subcategory_alternate_key', 'name': 'english_product_subcategory_name'})
     df=df.drop(['rowguid','modified_date'],axis=1)
@@ -153,7 +153,7 @@ def transform_product_subcategory(df: pd.DataFrame, etl_conn: Engine, model_regi
     df = convert_language('english_product_subcategory_name', 'spanish_product_subcategory_name', tokenizer_es, model_es, df)
     df = convert_language('english_product_subcategory_name', 'french_product_subcategory_name', tokenizer_fr, model_fr, df)
 
-    dim_product_category = pd.read_sql_table('dim_product_category', etl_conn)
+    dim_product_category = pd.read_sql_table('dim_product_category', etl_conn, schema=SCHEMA)
 
     df = df.merge(
         dim_product_category[['product_category_alternate_key', 'product_category_key']],
@@ -195,7 +195,7 @@ def transform_product(
 
     dim_product_subcategory = pd.read_sql_query(
         """SELECT product_subcategory_key, product_subcategory_alternate_key
-        FROM dim_product_subcategory
+        FROM dw.dim_product_subcategory
         """,
         etl_conn
     )
@@ -280,7 +280,7 @@ def transforms_customer(df_customer_base: pd.DataFrame, etl_conn: Engine, model_
     df_geo_with_keys = pd.read_sql(
         """
              SELECT geography_key, city, postal_code, state_province_code, country_region_code
-             FROM dim_geography;
+             FROM dw.dim_geography;
         """,
         etl_conn)
 
@@ -318,7 +318,7 @@ def transform_employee(
     print("TRANSFORM: Transformando employee")
 
     df_sales_territory = pd.read_sql(
-        text("SELECT sales_territory_key, sales_territory_alternate_key FROM dim_sales_territory;"),
+        text("SELECT sales_territory_key, sales_territory_alternate_key FROM dw.dim_sales_territory;"),
         etl_conn
     )
 
@@ -392,7 +392,7 @@ def transform_reseller(df_reseller_base: pd.DataFrame, etl_conn: Engine):
     df_geo_with_keys = pd.read_sql(
         """
             SELECT geography_key, city, postal_code, state_province_name, english_country_region_name as country_region_name
-            FROM dim_geography;
+            FROM dw.dim_geography;
         """,
         etl_conn)
 
@@ -418,13 +418,13 @@ def transform_reseller(df_reseller_base: pd.DataFrame, etl_conn: Engine):
     return df_reseller_base
 
 
-def transforms_fact_internet_sales(df: pd.DataFrame, df_special_offer: pd.DataFrame, etl_conn: Engine) -> pd.DataFrame:
+def transforms_fact_internet_sales(df: pd.DataFrame, df_special_offer: pd.DataFrame, etl_conn: Engine,SCHEMA) -> pd.DataFrame:
     print("TRANSFORM: Transformando fact internet sales")
-    df_product = pd.read_sql_table('dim_product', etl_conn)
-    df_promotion = pd.read_sql_table('dim_promotion', etl_conn)
-    df_currency = pd.read_sql_table('dim_currency', etl_conn)
-    df_sales_territory = pd.read_sql_table('dim_sales_territory', etl_conn)
-    df_customer = pd.read_sql_table('dim_customer', etl_conn)
+    df_product = pd.read_sql_table('dim_product', etl_conn,SCHEMA)
+    df_promotion = pd.read_sql_table('dim_promotion', etl_conn,SCHEMA)
+    df_currency = pd.read_sql_table('dim_currency', etl_conn,SCHEMA)
+    df_sales_territory = pd.read_sql_table('dim_sales_territory', etl_conn,SCHEMA)
+    df_customer = pd.read_sql_table('dim_customer', etl_conn,SCHEMA)
 
     df_product = df_product.drop_duplicates(subset=['product_alternate_key'])
     df_special_offer.drop_duplicates(subset=['product_number'], inplace=True)
@@ -486,15 +486,16 @@ def transforms_fact_reseller_tables(
         df_reseller_base: pd.DataFrame,
         df_special_offer: pd.DataFrame,
         df_table_currency: pd.DataFrame,
-        etl_conn: Engine
+        etl_conn: Engine,
+        SCHEMA
 ) -> pd.DataFrame:
     print("TRANSFORM: Transformando fact reseller sales")
-    df_product = pd.read_sql_table('dim_product', etl_conn)
-    df_reseller = pd.read_sql_table('dim_reseller', etl_conn)
-    df_employee = pd.read_sql_table('dim_employee', etl_conn)
-    df_currency = pd.read_sql_table('dim_currency', etl_conn)
-    df_sales_territory = pd.read_sql_table('dim_sales_territory', etl_conn)
-    df_promotion = pd.read_sql_table('dim_promotion', etl_conn)
+    df_product = pd.read_sql_table('dim_product', etl_conn,SCHEMA)
+    df_reseller = pd.read_sql_table('dim_reseller', etl_conn,SCHEMA)
+    df_employee = pd.read_sql_table('dim_employee', etl_conn,SCHEMA)
+    df_currency = pd.read_sql_table('dim_currency', etl_conn,SCHEMA)
+    df_sales_territory = pd.read_sql_table('dim_sales_territory', etl_conn,SCHEMA)
+    df_promotion = pd.read_sql_table('dim_promotion', etl_conn,SCHEMA)
 
     df_product['start_date'] = pd.to_datetime(df_product['start_date'])
     df_product['end_date'] = pd.to_datetime(df_product['end_date'])

@@ -2,6 +2,8 @@
 
 Este repositorio contiene la implementación de un proceso **ETL** para la construcción de un **datamart de ventas por internet y por revendedores** a partir de la base de datos **AdventureWorks2022** de Microsoft.
 
+**Tener en cuenta que este ETL puede tardar entre 6 a 8 minutos por el proceso de traducción**
+
 ---
 
 ## Configuración del entorno
