@@ -1,6 +1,6 @@
 # ETL: AdventureWorks
 
-### VER LA DOCUMENTACIÓN DEL PROYECTO EN EL SIGUIENTE ENLACE PARA VER LOS **INTEGRANTES** Y LA INFORMACIÓN DEL PUNTO 4 DEL PROYECTO: [Proyecto Parte 4 ETL](https://docs.google.com/document/d/1XuoYXvlWMYJBGkiB0L7DEKg_EvLLXwmy5t-Uo7zc0Xc/edit?usp=sharing)
+   ### VER LA DOCUMENTACIÓN DEL PROYECTO EN EL SIGUIENTE ENLACE PARA VER LOS **INTEGRANTES** Y LA INFORMACIÓN DEL PUNTO 4 DEL PROYECTO: [Proyecto Parte 4 ETL](https://docs.google.com/document/d/1XuoYXvlWMYJBGkiB0L7DEKg_EvLLXwmy5t-Uo7zc0Xc/edit?usp=sharing)
 
 Este repositorio contiene la implementación de un proceso **ETL** para la construcción de un **datamart de ventas por internet y por revendedores** a partir de la base de datos **AdventureWorks2022** de Microsoft.
 
