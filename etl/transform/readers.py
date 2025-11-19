@@ -10,5 +10,5 @@ def read_sql(name: str) -> str:
     with open(path, "r") as f:
         return f.read()
 
-def load_dimension(name: str, etl_conn: Engine) -> pd.DataFrame:
-    return pd.read_sql_table(name, etl_conn)
+def load_dimension(name: str, etl_conn: Engine, schema: str) -> pd.DataFrame:
+    return pd.read_sql_table(name, etl_conn, schema=schema)
