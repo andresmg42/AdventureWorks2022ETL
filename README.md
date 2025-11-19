@@ -13,57 +13,60 @@ Este repositorio contiene la implementación de un proceso **ETL** para la const
 Cree y active un entorno virtual, luego instale las dependencias con:
 
 ```bash
-python -m venv venv
-source venv/bin/activate  # En Linux o macOS
-venv\Scripts\activate     # En Windows
+python -m venv .venv
+source .venv/bin/activate  # En Linux o macOS
+.venv\Scripts\activate     # En Windows
 pip install -r requirements.txt
 ```
 
-### Entorno Nix (opcional)
-
-Si se encuentra en un entorno **Nix**, puede levantar el shell de desarrollo encapsulado mediante:
-
-```bash
-nix develop
-```
-
-Esto cargará automáticamente todas las dependencias definidas en el flake.
-
----
 
 ## Montaje del sistema
 
-1. Descargue la base de datos **AdventureWorks2022 OLAP** en **formato PostgreSQL**.
-   (Debe asegurarse de utilizar una versión compatible con PostgreSQL).
+La base de datos **AdventureWorks2022** ya se encuentra en la carpeta ./backups/adventure_works.slq. No es necesario que cargue otro backup.
 
-2. Coloque el archivo descargado en la carpeta `backups/`.
-
-3. Levante los contenedores con:
+1. Levante los contenedores con:
 
    ```bash
    docker compose up -d
    ```
 
-4. Para detener los servicios:
+2. ejecute para correr el ETL:
+
+    ``` 
+    python main.py
+    ``` 
+ 
+3. **!IMPORTANTE** Espere de 6 a 10 minutos mientras se realiza el ETL. Observe los logs en consola para saber en que proceso se encuetra la ejecución.
+
+4. Abra un navegador y navege a la siguiente direccion **http://localhost:5050** y se encotrara con la pagina de **pgadmin**.
+5. Escriba las siguientes credenciales para acceder:
+   **Email**: admin@admin.com
+   **Password**: pg123
+6. click derecho en Servers y cree una base de datos con las siguientes especificaciones para poder ver la base de datos **olap** creada con el ETL, la contraseña es **pg123**:
+   
+   <img width="884" height="695" alt="image" src="https://github.com/user-attachments/assets/fa92ea32-24a6-4874-8bce-b07db064f92f" />
+7. Abra la base de datos e ingrese al schema **dw** para ver los data marts de **fact_internet_sales** y **fact_resellers_sales**
+   
+8. Para detener los servicios:
 
    ```bash
    docker compose stop
    ```
 
-5. Para eliminar los contenedores y volúmenes:
+9. Para eliminar los contenedores y volúmenes:
 
    ```bash
    docker compose down
    ```
 
-6. En caso de problemas con contenedores huérfanos:
+10. En caso de problemas con contenedores huérfanos:
 
    ```bash
    docker compose down --remove-orphans
    ```
 
 ---
-
+# RESUMEN DE LA CONEXION CON PGADMIN PARA VER LOS RESULTADOS DEL ETL.
 ## Conexión desde pgAdmin
 
 Utilice los siguientes parámetros de conexión:
