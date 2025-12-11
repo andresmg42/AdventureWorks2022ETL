@@ -24,6 +24,7 @@ def main():
     model_registry.preload_model('en', 'de')
     model_registry.preload_model('en', 'trk')
 
+
     print("Iniciando proceso ETL")
     # Proceso DimSalesTerritory (independiente)
     df_sales_territory_raw = extract_sales_territory(co_oltp, 'sales')
